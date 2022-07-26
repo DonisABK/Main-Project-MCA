@@ -1,0 +1,145 @@
+<?php
+
+require_once('../../config.php');
+if(isset($_GET['id']) && $_GET['id'] > 0){
+    $qry = $conn->query("SELECT * from `tbl_class_list` where id = '{$_GET['id']}' ");
+    if($qry->num_rows > 0){
+        foreach($qry->fetch_assoc() as $k => $v){
+            $$k=$v;
+        }
+    }
+}
+?>
+<div class="container-fluid">
+	<form action="" id="type-form" enctype="multipart/form-data">
+		<input type="hidden" name ="id" value="<?php echo isset($id) ? $id : '' ?>">
+		<div class="form-group">
+			<label for="course_id" class="control-label">Course</label>
+			<select name="course_id" id="course_id" class="form-control form-control-sm rounded-0 select2" required>
+				<option value="" disabled <?= !isset($course_id) ? 'selected' : "" ?>></option>
+				<?php 
+				$course = $conn->query("SELECT * FROM `tbl_course_list` where delete_flag = '0' and `status` = 1  ".(isset($course_id) ? " or id = '{$course_id}'" : "")."  order by `name` asc");
+				while($row = $course->fetch_assoc()):
+				?>
+					<option value="<?= $row['id'] ?>" <?php echo isset($course_id) && $course_id == $row['id'] ? 'selected' : '' ?>><?= $row['name'] ?></option>
+				<?php endwhile; ?>
+			</select>
+		</div>
+		<div class="form-group">
+			<label for="name" class="control-label">Subject Code</label>
+			<input type="text" name="subject_code" id="subject_code" class="form-control form-control-sm rounded-0" value="<?php echo isset($subject_code) ? $subject_code : ''; ?>"  required/>
+		</div>
+		<div class="form-group">
+			<label for="name" class="control-label">Subject Name</label>
+			<input type="text" name="sub_name" id="sub_name" class="form-control form-control-sm rounded-0" value="<?php echo isset($subject_name) ? $subject_name : ''; ?>"  required/>
+		</div>
+		<div class="form-group">
+			<label for="sub_semester" class="control-label">Subject Semester</label>
+			<select name="sub_semester" id="sub_semester" class="form-control form-control-sm rounded-0" required>
+			<option value="S1" <?php echo isset($sub_semester) && $sub_semester == S1 ? 'selected' : '' ?>>1</option>
+			<option value="S2" <?php echo isset($sub_semester) && $sub_semester == S2 ? 'selected' : '' ?>>2</option>
+			<option value="S3" <?php echo isset($sub_semester) && $sub_semester == S3 ? 'selected' : '' ?>>3</option>
+			<option value="S4" <?php echo isset($sub_semester) && $sub_semester == S4 ? 'selected' : '' ?>>4</option>
+			<option value="S5" <?php echo isset($sub_semester) && $sub_semester == S5 ? 'selected' : '' ?>>5</option>
+			<option value="S6" <?php echo isset($sub_semester) && $sub_semester == S6 ? 'selected' : '' ?>>6</option>
+			<option value="S7" <?php echo isset($sub_semester) && $sub_semester == S7 ? 'selected' : '' ?>>7</option>
+			<option value="S8" <?php echo isset($sub_semester) && $sub_semester == S8 ? 'selected' : '' ?>>8</option>
+			<option value="S9" <?php echo isset($sub_semester) && $sub_semester == S9 ? 'selected' : '' ?>>9</option>
+			<option value="S10" <?php echo isset($sub_semester) && $sub_semester == S10 ? 'selected' : '' ?>>10</option>
+
+			</select>
+		</div>
+		<div class="form-group">
+			<label for="subject_credit" class="control-label">Subject Credit</label>
+			<select name="subject_credit" id="subject_credit" class="form-control form-control-sm rounded-0" required>
+			<option value="0" <?php echo isset($subject_credit) && $subject_credit== 0 ? 'selected' : '' ?>>0</option>
+			<option value="1" <?php echo isset($subject_credit) && $subject_credit == 1 ? 'selected' : '' ?>>1</option>
+			<option value="2" <?php echo isset($subject_credit) && $subject_credit == 2 ? 'selected' : '' ?>>2</option>
+			<option value="3" <?php echo isset($subject_credit) && $subject_credit == 3 ? 'selected' : '' ?>>3</option>
+			<option value="4" <?php echo isset($subject_credit) && $subject_credit == 4 ? 'selected' : '' ?>>4</option>
+
+			</select>
+		</div>
+		
+		<div class="form-group">
+			<label for="subject_status" class="control-label">Subject Status</label>
+			<select name="subject_status" id="subject_status" class="form-control form-control-sm rounded-0" required>
+			<option value="1" <?php echo isset($subject_status) && $subject_status == 1 ? 'selected' : '' ?>>Active</option>
+			<option value="0" <?php echo isset($subject_status) && $subject_status == 0 ? 'selected' : '' ?>>Inactive</option>
+			</select>
+		</div>
+		<div class="form-group">
+					<div class="col-md-6">
+						<div class="form-group">
+							<label for="" class="control-label">Syllabus</label>
+							<div class="custom-file">
+								<input type="file" class="custom-file-input rounded-circle" id="syllabus" name="syllabus"  accept=".pdf,.doc,.xlsx" onchange="javascript:updateList()">
+								<label class="custom-file-label" for="customFile">Choose file</label>
+							</div>
+						</div>
+						<br/>Selected files:
+						<div id="fileList"></div>
+					</div>
+				</div>
+
+	</form>
+</div>
+<script>
+	updateList = function() {
+  var input = document.getElementById('syllabus');
+  var output = document.getElementById('fileList');
+
+  output.innerHTML = '<ul>';
+  for (var i = 0; i < input.files.length; ++i) {
+    output.innerHTML += '<li>' + input.files.item(i).name + '</li>';
+  }
+  output.innerHTML += '</ul>';
+}
+	$(document).ready(function(){
+		$('#uni_modal').on('shown.bs.modal', function(){
+			$('.select2').select2({
+				placeholder:'Please Select Here',
+				width:'100%',
+				dropdownParent: $('#uni_modal')
+			})
+		})
+		$('#type-form').submit(function(e){
+			e.preventDefault();
+            var _this = $(this)
+			 $('.err-msg').remove();
+			start_loader();
+			$.ajax({
+				url:_base_url_+"classes/Master.php?f=save_subject",
+				data: new FormData($(this)[0]),
+                cache: false,
+                contentType: false,
+                processData: false,
+                method: 'POST',
+                type: 'POST',
+                dataType: 'json',
+				error:err=>{
+					console.log(err)
+					alert_toast("An error occured",'error');
+					end_loader();
+				},
+				success:function(resp){
+					if(typeof resp =='object' && resp.status == 'success'){
+						location.reload()
+					}else if(resp.status == 'failed' && !!resp.msg){
+                        var el = $('<div>')
+                            el.addClass("alert alert-danger err-msg").text(resp.msg)
+                            _this.prepend(el)
+                            el.show('slow')
+                            $("html, body").animate({ scrollTop: _this.closest('.card').offset().top }, "fast");
+                            end_loader()
+                    }else{
+						alert_toast("An error occured",'error');
+						end_loader();
+                        console.log(resp)
+					}
+				}
+			})
+		})
+
+	})
+</script>
